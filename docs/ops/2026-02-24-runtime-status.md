@@ -18,6 +18,7 @@
 - Resume mode: enabled via `ENABLE_RESUME=1`
 - Resume source: `/home/weezboo/projects/LowResource-LLM-Forge/artifacts/training/turkcell-7b-sft-v3-a100-bf16-stable/checkpoint-500`
 - Current step snapshot: `803/8601` (2026-02-24 08:59 UTC)
+- Fallback guard: next watchdog-triggered restart uses lower-LR config `configs/models/turkcell_7b_a100_v5_recovery_low_lr.yaml` (`learning_rate: 2.0e-5`)
 - Effective command includes:
   - `--config configs/models/turkcell_7b_a100_v4_recovery.yaml`
   - `--resume-from .../checkpoint-500`
