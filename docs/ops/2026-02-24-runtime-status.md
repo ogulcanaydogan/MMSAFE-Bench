@@ -17,6 +17,7 @@
 - Training service: `forge-training.service` (`active`)
 - Resume mode: enabled via `ENABLE_RESUME=1`
 - Resume source: `/home/weezboo/projects/LowResource-LLM-Forge/artifacts/training/turkcell-7b-sft-v3-a100-bf16-stable/checkpoint-500`
+- Current step snapshot: `803/8601` (2026-02-24 08:59 UTC)
 - Effective command includes:
   - `--config configs/models/turkcell_7b_a100_v4_recovery.yaml`
   - `--resume-from .../checkpoint-500`
@@ -25,7 +26,7 @@
 - Output directory: `artifacts/full_eval_v100_clean_20260224`
 - Active run log: `/home/weezboo/projects/MMSAFE-Bench/artifacts/logs/full_eval_v100_20260224_072959.log`
 - Latest checkpoint file: `checkpoint_eval-9ffcbab36406.json`
-- Latest checkpoint completed count (snapshot): `650`
+- Latest checkpoint completed count (snapshot): `850` (2026-02-24 07:54 UTC)
 
 ## Notification and Secrets Posture
 - Updated on all hosts (`a100`, `v100`, `spark`):
