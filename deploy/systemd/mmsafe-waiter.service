@@ -1,0 +1,19 @@
+[Unit]
+Description=MMSAFE A100 Waiter and Full Evaluation Runner
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/weezboo/projects/MMSAFE-Bench
+EnvironmentFile=-/home/weezboo/.mmsafe.env
+EnvironmentFile=-/home/weezboo/.notify.env
+Environment=MMSAFE_ENV_FILE=/home/weezboo/.mmsafe.env
+Environment=NOTIFY_SCRIPT=/home/weezboo/projects/MMSAFE-Bench/scripts/ops/notify_telegram.sh
+ExecStart=/usr/bin/env bash /home/weezboo/projects/MMSAFE-Bench/scripts/wait_and_run_full_eval.sh
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/weezboo/projects/MMSAFE-Bench/artifacts/logs/mmsafe_waiter.service.log
+StandardError=append:/home/weezboo/projects/MMSAFE-Bench/artifacts/logs/mmsafe_waiter.service.log
+
+[Install]
+WantedBy=default.target

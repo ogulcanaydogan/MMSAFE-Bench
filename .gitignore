@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+
+# Type checking
+.mypy_cache/
+
+# Linting
+.ruff_cache/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Artifacts (eval run outputs)
+artifacts/*
+!artifacts/.gitkeep
+!artifacts/examples/
+
+# Checkpoints
+checkpoints/
+
+# uv
+uv.lock
+
+# Secrets
+.secrets.baseline

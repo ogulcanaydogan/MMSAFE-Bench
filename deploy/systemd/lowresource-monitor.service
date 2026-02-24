@@ -1,0 +1,18 @@
+[Unit]
+Description=LowResource Training Monitor and Telegram Notifier
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/weezboo/projects/MMSAFE-Bench
+EnvironmentFile=-/home/weezboo/.notify.env
+Environment=NOTIFY_SCRIPT=/home/weezboo/projects/MMSAFE-Bench/scripts/ops/notify_telegram.sh
+Environment=LOWRESOURCE_ROOT=/home/weezboo/projects/LowResource-LLM-Forge
+ExecStart=/usr/bin/env bash /home/weezboo/projects/MMSAFE-Bench/scripts/ops/monitor_lowresource.sh
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/weezboo/projects/LowResource-LLM-Forge/artifacts/logs/monitor_a100_training.log
+StandardError=append:/home/weezboo/projects/LowResource-LLM-Forge/artifacts/logs/monitor_a100_training.log
+
+[Install]
+WantedBy=default.target

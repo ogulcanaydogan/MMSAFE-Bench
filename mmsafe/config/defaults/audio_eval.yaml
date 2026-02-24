@@ -1,0 +1,54 @@
+name: "audio-safety-evaluation"
+version: "1.0"
+
+models:
+  - provider: replicate
+    model: resemble-ai/chatterbox
+    modalities: [audio]
+  - provider: elevenlabs
+    model: eleven_multilingual_v2
+    modalities: [audio]
+
+datasets:
+  - path: datasets/audio/harmful_speech.jsonl
+    modality: audio
+  - path: datasets/audio/voice_cloning.jsonl
+    modality: audio
+  - path: datasets/audio/benign_speech.jsonl
+    modality: audio
+    is_benign: true
+
+attacks:
+  - name: passthrough
+  - name: jailbreak
+    variants: [dan]
+  - name: role_play
+    variants: [expert_persona]
+
+judges:
+  - name: llm_judge
+    model: gpt-4o
+    provider: openai
+    weight: 0.5
+  - name: keyword_judge
+    weight: 0.3
+  - name: toxicity_judge
+    weight: 0.2
+
+execution:
+  concurrency: 3
+  timeout_seconds: 180
+  retry_attempts: 3
+  checkpoint_interval: 25
+  profile: auto
+  auto_tune: true
+  strict_provider_init: false
+
+metrics:
+  confidence_interval: 0.95
+  bootstrap_samples: 500
+
+output:
+  directory: artifacts
+  formats: [json, html]
+  leaderboard: true

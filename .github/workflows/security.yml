@@ -1,0 +1,35 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"  # Weekly Monday at 06:00 UTC
+
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t mmsafe:scan .
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: mmsafe:scan
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install detect-secrets
+        run: pip install detect-secrets
+      - name: Scan for secrets
+        run: detect-secrets scan --all-files --force-use-all-plugins | python -c "import json,sys; d=json.load(sys.stdin); sys.exit(1 if d.get('results') else 0)"

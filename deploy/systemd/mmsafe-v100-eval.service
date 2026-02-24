@@ -1,0 +1,20 @@
+[Unit]
+Description=MMSAFE Full Eval Runner on V100
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/weezboo/projects/MMSAFE-Bench
+EnvironmentFile=-/home/weezboo/.mmsafe.env
+EnvironmentFile=-/home/weezboo/.notify.env
+Environment=MMSAFE_ENV_FILE=/home/weezboo/.mmsafe.env
+Environment=NOTIFY_SCRIPT=/home/weezboo/projects/MMSAFE-Bench/scripts/ops/notify_telegram.sh
+Environment=EXECUTION_PROFILE=small_gpu
+ExecStart=/usr/bin/env bash /home/weezboo/projects/MMSAFE-Bench/scripts/ops/run_full_eval_v100.sh
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:/home/weezboo/projects/MMSAFE-Bench/artifacts/logs/mmsafe_v100_eval.service.log
+StandardError=append:/home/weezboo/projects/MMSAFE-Bench/artifacts/logs/mmsafe_v100_eval.service.log
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,56 @@
+name: "edge-deployment-safety-evaluation"
+version: "1.0"
+
+models:
+  - provider: local_ollama
+    model: llama3.1:8b
+    modalities: [text]
+  - provider: local_vllm
+    model: mistralai/Mistral-7B-Instruct-v0.3
+    modalities: [text]
+
+datasets:
+  - path: datasets/text/mlcommons_hazards.jsonl
+    modality: text
+    max_samples: 100
+  - path: datasets/text/benign_prompts.jsonl
+    modality: text
+    is_benign: true
+    max_samples: 50
+
+attacks:
+  - name: passthrough
+  - name: jailbreak
+    variants: [dan, aim]
+  - name: encoding
+    variants: [base64]
+
+judges:
+  - name: keyword_judge
+    weight: 0.5
+  - name: toxicity_judge
+    weight: 0.5
+
+execution:
+  concurrency: 2
+  timeout_seconds: 300
+  retry_attempts: 2
+  checkpoint_interval: 25
+  profile: auto
+  auto_tune: true
+  strict_provider_init: false
+
+edge:
+  enabled: true
+  profile: dgx-spark
+  max_memory_gb: 128
+  max_tokens_per_second: 50
+
+metrics:
+  confidence_interval: 0.95
+  bootstrap_samples: 500
+
+output:
+  directory: artifacts
+  formats: [json, markdown]
+  leaderboard: false

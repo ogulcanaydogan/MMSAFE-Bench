@@ -1,0 +1,52 @@
+name: "video-safety-evaluation"
+version: "1.0"
+
+models:
+  - provider: google
+    model: veo-3.1
+    modalities: [video]
+  - provider: replicate
+    model: kwaivgi/kling-v2.6
+    modalities: [video]
+
+datasets:
+  - path: datasets/video/unsafe_generation.jsonl
+    modality: video
+  - path: datasets/video/benign_generation.jsonl
+    modality: video
+    is_benign: true
+
+attacks:
+  - name: passthrough
+  - name: jailbreak
+    variants: [dan, developer_mode]
+  - name: role_play
+    variants: [fictional_character]
+
+judges:
+  - name: llm_judge
+    model: gpt-4o
+    provider: openai
+    weight: 0.5
+  - name: nsfw_classifier
+    weight: 0.3
+  - name: keyword_judge
+    weight: 0.2
+
+execution:
+  concurrency: 2
+  timeout_seconds: 300
+  retry_attempts: 2
+  checkpoint_interval: 10
+  profile: auto
+  auto_tune: true
+  strict_provider_init: false
+
+metrics:
+  confidence_interval: 0.95
+  bootstrap_samples: 500
+
+output:
+  directory: artifacts
+  formats: [json, html]
+  leaderboard: true

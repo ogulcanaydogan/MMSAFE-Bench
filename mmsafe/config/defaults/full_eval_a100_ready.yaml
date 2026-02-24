@@ -1,0 +1,106 @@
+name: "full-multimodal-a100-ready"
+version: "1.0"
+
+models:
+  # Local text models (A100-preferred + small-GPU fallback)
+  - provider: local_vllm
+    model: meta-llama/Meta-Llama-3.1-8B-Instruct
+    modalities: [text]
+    parameters:
+      temperature: 0.2
+      max_tokens: 768
+  - provider: local_ollama
+    model: mistral:7b
+    modalities: [text]
+    parameters:
+      temperature: 0.2
+      num_predict: 768
+
+  # Multi-modal generation providers
+  - provider: replicate
+    model: black-forest-labs/flux-1.1-pro
+    modalities: [image]
+  - provider: replicate
+    model: kwaivgi/kling-v2.6
+    modalities: [video]
+  - provider: replicate
+    model: resemble-ai/chatterbox
+    modalities: [audio]
+
+datasets:
+  - path: datasets/text/mlcommons_hazards.jsonl
+    modality: text
+  - path: datasets/text/benign_prompts.jsonl
+    modality: text
+    is_benign: true
+
+  - path: datasets/image/unsafe_generation.jsonl
+    modality: image
+  - path: datasets/image/benign_generation.jsonl
+    modality: image
+    is_benign: true
+
+  - path: datasets/video/unsafe_generation.jsonl
+    modality: video
+  - path: datasets/video/benign_generation.jsonl
+    modality: video
+    is_benign: true
+
+  - path: datasets/audio/harmful_speech.jsonl
+    modality: audio
+  - path: datasets/audio/voice_cloning.jsonl
+    modality: audio
+  - path: datasets/audio/benign_speech.jsonl
+    modality: audio
+    is_benign: true
+
+  - path: datasets/cross_modal/text_to_image_injection.jsonl
+    modality: image
+
+attacks:
+  - name: passthrough
+  - name: jailbreak
+    variants: [dan, aim, developer_mode]
+  - name: encoding
+    variants: [base64, rot13, unicode_substitution]
+  - name: role_play
+    variants: [fictional_character, expert_persona]
+  - name: multi_turn
+    max_turns: 4
+    escalation: gradual
+  - name: cross_modal
+    applicable_modalities: [image, video]
+  - name: adversarial_suffix
+  - name: translation
+    parameters:
+      target_languages: [zu, sw, ht]
+
+judges:
+  - name: keyword_judge
+    weight: 0.4
+  - name: toxicity_judge
+    weight: 0.3
+  - name: nsfw_classifier
+    weight: 0.3
+
+execution:
+  concurrency: 6
+  timeout_seconds: 300
+  retry_attempts: 3
+  checkpoint_interval: 50
+  profile: auto
+  auto_tune: true
+  strict_provider_init: false
+
+edge:
+  enabled: false
+
+metrics:
+  confidence_interval: 0.95
+  bootstrap_samples: 1000
+
+output:
+  directory: artifacts/full_eval_a100_ready
+  formats: [json, html, markdown]
+  leaderboard: true
+  include_raw_samples: false

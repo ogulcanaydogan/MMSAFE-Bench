@@ -1,0 +1,123 @@
+[project]
+name = "mmsafe-bench"
+version = "0.1.0"
+description = "Multi-modal AI safety evaluation framework for red-teaming generative models across text, image, video, and audio"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [{ name = "Ogulcan Aydogan" }]
+keywords = ["ai-safety", "red-teaming", "benchmark", "multi-modal", "llm", "evaluation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security",
+]
+
+dependencies = [
+    "click>=8.1",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "pyyaml>=6.0",
+    "httpx>=0.27",
+    "rich>=13.0",
+    "jinja2>=3.1",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+viz = [
+    "plotly>=5.18",
+    "matplotlib>=3.8",
+]
+providers = [
+    "openai>=1.50",
+    "anthropic>=0.30",
+    "google-generativeai>=0.7",
+    "replicate>=0.25",
+    "elevenlabs>=1.0",
+]
+local = [
+    "vllm>=0.6",
+]
+nsfw = [
+    "transformers>=4.40",
+    "torch>=2.0",
+    "pillow>=10.0",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "types-PyYAML>=6.0",
+    "types-jinja2>=2.11",
+    "pre-commit>=3.7",
+]
+all = ["mmsafe-bench[viz,providers,nsfw]"]
+
+[project.scripts]
+mmsafe = "mmsafe.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mmsafe"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "TCH"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "plotly.*",
+    "replicate.*",
+    "elevenlabs.*",
+    "vllm.*",
+    "transformers.*",
+    "google.generativeai.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["mmsafe"]
+omit = [
+    # External API providers require live credentials — tested via integration/manual
+    "mmsafe/providers/openai.py",
+    "mmsafe/providers/anthropic.py",
+    "mmsafe/providers/google.py",
+    "mmsafe/providers/replicate.py",
+    "mmsafe/providers/elevenlabs.py",
+    "mmsafe/providers/local_vllm.py",
+    "mmsafe/providers/local_ollama.py",
+    # Statistical utilities depend on optional scipy
+    "mmsafe/metrics/statistical.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]

@@ -1,0 +1,15 @@
+services:
+  mmsafe:
+    build: .
+    image: mmsafe:latest
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./datasets:/app/datasets:ro
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN:-}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+    entrypoint: ["mmsafe"]
+    command: ["--help"]
