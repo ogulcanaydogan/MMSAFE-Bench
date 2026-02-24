@@ -26,9 +26,9 @@
 
 - MMSAFE clean eval host: `v100`
 - Output directory: `artifacts/full_eval_v100_clean_20260224`
-- Active run log: `/home/weezboo/projects/MMSAFE-Bench/artifacts/logs/full_eval_v100_20260224_072959.log`
+- Active run log: `/home/weezboo/projects/MMSAFE-Bench/artifacts/logs/full_eval_v100_20260224_092928.log`
 - Latest checkpoint file: `checkpoint_eval-9ffcbab36406.json`
-- Latest checkpoint completed count (snapshot): `850` (2026-02-24 07:54 UTC)
+- Latest checkpoint completed count (snapshot): `850` (2026-02-24 09:29 UTC, resumed from checkpoint)
 
 ## Notification and Secrets Posture
 - Updated on all hosts (`a100`, `v100`, `spark`):
