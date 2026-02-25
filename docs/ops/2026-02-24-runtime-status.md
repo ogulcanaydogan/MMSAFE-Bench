@@ -1,4 +1,4 @@
-# Runtime Status - 2026-02-24 (Updated 23:54 UTC)
+# Runtime Status - 2026-02-24 (Updated 2026-02-25 05:02 UTC)
 
 ## Scope
 - LowResource-LLM-Forge: stable resume continuation on `a100`
@@ -15,11 +15,11 @@
   - `uv run python scripts/run_training.py --config configs/models/turkcell_7b_a100_v6_recovery_reset_opt.yaml --resume-from artifacts/training/turkcell-7b-sft-v6-a100-bf16-recovery-reset-opt/checkpoint-750`
 - Canonical telemetry file:
   - `/home/weezboo/projects/LowResource-LLM-Forge/artifacts/logs/training_monitor_status_a100.txt`
-- Snapshot (`2026-02-24T23:56:22Z`):
-  - `step=871/8601`
-  - `percent=9`
-  - `eta_utc=2026-02-25T12:04:45Z`
-  - `gpu=100 %, 60486 MiB, 81920 MiB`
+- Snapshot (`2026-02-25T05:01:52Z`):
+  - `step=969/8601`
+  - `percent=11`
+  - `eta_utc=2026-02-25T21:40:48Z`
+  - `gpu=100 %, 60906 MiB, 81920 MiB`
   - `state=running`
 - Checkpoints currently present:
   - `checkpoint-250`
@@ -34,9 +34,14 @@
   - `scripts/ops/monitor_lowresource.sh` now auto-selects freshest `training_monitor_status*.txt`.
   - Adds `status_file` and `status_age` to each monitor heartbeat log line.
   - Adds stale-status warning path (`STATUS_STALE_SECONDS`, default `180s`) and suppresses false stall alerts while telemetry is stale.
+  - Adds restart-aware step reset handling (`RESET_DROP_THRESHOLD`, default `100`) so monitor does not emit false stall alerts when training resumes from a lower checkpoint step.
 - Verification:
   - new heartbeat line includes `status_file=...training_monitor_status_a100.txt status_age=25s`.
   - telemetry freshness check (`2026-02-24T23:55:20Z` → `2026-02-24T23:56:50Z`) shows monotonic progress (`step 856 -> 871`) from the canonical status file.
+  - post-restart monitor line (`2026-02-25T05:01:57Z`) shows `stalled_for=0s` and fresh `status_age=5s`.
+- Recent restart evidence:
+  - `forge-training.service` auto-restarted at `2026-02-25 02:54:36 UTC` (journal status `143`), then resumed from `checkpoint-750`.
+  - Current run has already climbed back to `step=969`.
 
 ## A100 Policy Guard (MMSAFE Waiter)
 - `mmsafe-waiter.service`: `active (running)`

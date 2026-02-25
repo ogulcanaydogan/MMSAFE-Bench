@@ -8,6 +8,7 @@ TRAINING_PATTERN="${TRAINING_PATTERN:-LowResource-LLM-Forge/.venv/bin/python3 sc
 STATUS_FILE="${STATUS_FILE:-$LOWRESOURCE_ROOT/artifacts/logs/training_monitor_status_a100.txt}"
 STATUS_FILE_GLOB="${STATUS_FILE_GLOB:-$LOWRESOURCE_ROOT/artifacts/logs/training_monitor_status*.txt}"
 STATUS_STALE_SECONDS="${STATUS_STALE_SECONDS:-180}"
+RESET_DROP_THRESHOLD="${RESET_DROP_THRESHOLD:-100}"
 MONITOR_LOG="${MONITOR_LOG:-$LOWRESOURCE_ROOT/artifacts/logs/monitor_a100_training.log}"
 POLL_SECONDS="${MONITOR_POLL_SECONDS:-120}"
 STALL_SECONDS="${MONITOR_STALL_SECONDS:-1800}"
@@ -147,10 +148,18 @@ while true; do
     status_stale=1
   fi
 
-  if [[ "$step" =~ ^[0-9]+$ ]] && (( step > last_step )); then
-    last_step="$step"
-    last_progress_ts="$now_ts"
-    sent_stall=0
+  if [[ "$step" =~ ^[0-9]+$ ]]; then
+    if (( step > last_step )); then
+      last_step="$step"
+      last_progress_ts="$now_ts"
+      sent_stall=0
+    elif (( is_active == 1 )) && (( last_step >= 0 )) && (( step + RESET_DROP_THRESHOLD < last_step )); then
+      previous_step="$last_step"
+      last_step="$step"
+      last_progress_ts="$now_ts"
+      sent_stall=0
+      notify info "LowResource step reset detected (${previous_step} -> ${step}); monitoring continues from resumed step."
+    fi
   fi
 
   if (( is_active == 1 )); then
