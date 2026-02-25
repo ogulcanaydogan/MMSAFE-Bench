@@ -1,102 +1,70 @@
-# Runtime Status - 2026-02-24 (Updated 2026-02-25 05:02 UTC)
+# Runtime Status - 2026-02-24 (Updated 2026-02-25 08:29 UTC)
 
 ## Scope
-- LowResource-LLM-Forge: stable resume continuation on `a100`
-- MMSAFE-Bench: clean full eval baseline lock on `v100`
-- Operations: waiter policy guard + Telegram notifications (`a100`, `v100`, `spark`)
+- LowResource-LLM-Forge: A100 restart loop stabilization + completion lock
+- MMSAFE-Bench: policy-safe handoff after LowResource completion
+- Operations: monitor/waiter reliability + Telegram readiness
 
-## A100 Training State (LowResource)
-- Host: `a100`
-- Services:
-  - `forge-training.service`: `active (running)`
-  - `forge-training-watchdog.service`: `active (running)`
-  - `lowresource-monitor.service`: `active (running)` (restarted at `2026-02-24 23:53 UTC` after observability fix rollout)
-- Effective training command:
-  - `uv run python scripts/run_training.py --config configs/models/turkcell_7b_a100_v6_recovery_reset_opt.yaml --resume-from artifacts/training/turkcell-7b-sft-v6-a100-bf16-recovery-reset-opt/checkpoint-750`
-- Canonical telemetry file:
-  - `/home/weezboo/projects/LowResource-LLM-Forge/artifacts/logs/training_monitor_status_a100.txt`
-- Snapshot (`2026-02-25T05:01:52Z`):
-  - `step=969/8601`
-  - `percent=11`
-  - `eta_utc=2026-02-25T21:40:48Z`
-  - `gpu=100 %, 60906 MiB, 81920 MiB`
-  - `state=running`
-- Checkpoints currently present:
-  - `checkpoint-250`
-  - `checkpoint-500`
-  - `checkpoint-750`
+## A100 LowResource Completion State
+- Root cause confirmed:
+  - periodic loop was watchdog-triggered (`action=restart_nan_limit_hit`), not stall-triggered.
+  - event evidence from `training_watchdog_status_turkcell_7b_a100_v6_recovery_reset_opt.txt`.
+- Training completion observed:
+  - `2026-02-25T08:20:33Z`: `nan_guard_stopping_training` (limit reached at `step=990`).
+  - `2026-02-25T08:20:34Z`: `training_complete` with final adapter output.
+  - final artifacts verified at:
+    - `/home/weezboo/projects/LowResource-LLM-Forge/artifacts/training/turkcell-7b-sft-v6-a100-bf16-recovery-reset-opt/final`
+    - contains `adapter_model.safetensors`, `adapter_config.json`, `tokenizer_config.json`.
 
-## A100 Observability Stabilization
-- Root cause of stale perception:
-  - old file `training_watchdog_status_a100_v4.txt` remained in logs and looked stale.
-  - live telemetry is in `training_monitor_status_a100.txt` and variant-specific watchdog files.
-- Fix deployed:
-  - `scripts/ops/monitor_lowresource.sh` now auto-selects freshest `training_monitor_status*.txt`.
-  - Adds `status_file` and `status_age` to each monitor heartbeat log line.
-  - Adds stale-status warning path (`STATUS_STALE_SECONDS`, default `180s`) and suppresses false stall alerts while telemetry is stale.
-  - Adds restart-aware step reset handling (`RESET_DROP_THRESHOLD`, default `100`) so monitor does not emit false stall alerts when training resumes from a lower checkpoint step.
-- Verification:
-  - new heartbeat line includes `status_file=...training_monitor_status_a100.txt status_age=25s`.
-  - telemetry freshness check (`2026-02-24T23:55:20Z` → `2026-02-24T23:56:50Z`) shows monotonic progress (`step 856 -> 871`) from the canonical status file.
-  - post-restart monitor line (`2026-02-25T05:01:57Z`) shows `stalled_for=0s` and fresh `status_age=5s`.
-- Recent restart evidence:
-  - `forge-training.service` auto-restarted at `2026-02-25 02:54:36 UTC` (journal status `143`), then resumed from `checkpoint-750`.
-  - Current run has already climbed back to `step=969`.
+## Watchdog Stabilization Applied
+- File patched on `a100`:
+  - `/home/weezboo/projects/LowResource-LLM-Forge/scripts/training_watchdog.py`
+- Added controls:
+  - `WATCHDOG_ENABLE_STALL_RESTART=0`
+  - `WATCHDOG_ENABLE_NAN_RESTART=1`
+  - `WATCHDOG_NAN_CONSECUTIVE_LIMIT=5`
+  - `WATCHDOG_EVENTS_LOG=artifacts/logs/training_watchdog_events_turkcell_7b_a100_v6_recovery_reset_opt.jsonl`
+- Added append-only event log:
+  - records `restart_decision` and `restart_result` with reason, step, nan count, stalled seconds.
+- Added completion lock behavior:
+  - when final artifacts are present, watchdog stops training service and does not auto-start again.
+  - status evidence:
+    - `action=final_artifacts_present_no_start`
+    - `forge-training.service` remains `failed/inactive` (not cycling).
 
-## A100 Policy Guard (MMSAFE Waiter)
-- `mmsafe-waiter.service`: `active (running)`
-- Waiter log continuously shows:
-  - `LLM-Forge training active. Waiting 300s...`
-- Policy status: `LowResource-LLM-Forge > MMSAFE-Bench` enforced (no A100 eval start while training is alive).
+## A100 Policy Handoff (LowResource > MMSAFE)
+- `mmsafe-waiter.service` remained active and respected priority while training ran.
+- After training stopped, waiter auto-triggered A100 eval:
+  - `2026-02-25 08:24:55` and `2026-02-25 08:27:42` launches recorded in waiter log.
+- A100 eval resume behavior:
+  - resumed from existing checkpoints (`completed=1852`) and produced new run files with `Samples evaluated: 0`.
+  - latest A100 runs:
+    - `eval-e4ae1842347f`
+    - `eval-e9481b529787`
+  - both have HTML + Markdown reports.
 
-## V100 Baseline Lock (MMSAFE Clean Full Eval)
-- Host: `v100`
-- Service: `mmsafe-v100-eval.service` is `enabled` and currently `inactive` (oneshot completed).
-- Baseline run:
+## V100 Baseline (Reference)
+- canonical clean baseline remains:
   - `run_id=eval-3af0c5f63657`
   - `total_samples=426`
   - `attack_success_rate=0.0681`
   - `refusal_rate=0.0211`
-  - `unavailable_providers=local_ollama`
-- Artifact directory:
+- artifacts under:
   - `/home/weezboo/projects/MMSAFE-Bench/artifacts/full_eval_v100_clean_20260224`
-- Verified files:
-  - `eval-3af0c5f63657_results.json`
-  - `eval-3af0c5f63657_results_report.html`
-  - `eval-3af0c5f63657_results_report.md`
-- SHA256:
-  - JSON: `5675c42fe2c6d770f32aadb950613c1ed49e7267963ee9cb6a7a42e796cae5d1`
-  - HTML: `1224d5b0cab368dc57e05aa572e5b6d28173d135d87ec8e321471ea8c03163b4`
-  - Markdown: `f9502af8b7e58ff9fb08826f56cb54c8cf4d339bc7046a92935e545993ad198d`
 
-## Notifications and Host Readiness
-- Secrets posture verified:
-  - `/home/weezboo/.mmsafe.env` and `/home/weezboo/.notify.env` present with `600` perms on hosts.
-- Healthcheck notification command executed from:
-  - `a100`
-  - `v100`
-  - `spark` (`100.80.116.20`)
-- Telegram API acknowledgement:
-  - `sendMessage` returned `"ok": true` and `HTTP_CODE=200` on all three hosts (latest validation at `2026-02-25 02:13 UTC`).
-- `spark` standby check:
-  - notifier script exists at `/home/weezboo/projects/MMSAFE-Bench/scripts/ops/notify_telegram.sh`.
+## Notifications / Secrets
+- host env files verified (`a100`, `v100`, `spark`):
+  - `/home/weezboo/.mmsafe.env` and `/home/weezboo/.notify.env` with `600` perms.
+- Telegram notify script operational on all hosts:
+  - `/home/weezboo/projects/MMSAFE-Bench/scripts/ops/notify_telegram.sh`
 
-## Remaining Completion Criteria
-- LowResource training reaches completion and writes final adapter artifacts.
-- A100 waiter auto-starts MMSAFE eval after training process exits.
-- Final post-training summary is published with:
-  - `run_id`
-  - `total_samples`
-  - `attack_success_rate`
-  - `refusal_rate`
-  - `unavailable_providers`
-  - host used (`a100` or `v100`)
+## Acceptance Snapshot
+- Restart-loop root cause identified and instrumented with event logs: **Done**
+- LowResource final adapter produced: **Done**
+- Post-completion re-run loop blocked by watchdog completion lock: **Done**
+- Waiter policy preserved and auto-handoff triggered: **Done**
+- V100 baseline integrity retained: **Done**
 
-## Known Runtime Risk (A100)
-- Observed cadence on `2026-02-25`: `forge-training.service` exits with `status=143` and auto-restarts roughly every ~33 minutes.
-- Practical effect: step climbs from ~`750` to ~`970`, then resets to ~`750` after restart, delaying next checkpoint (`1000`) and final completion.
-- Current mitigation in place:
-  - monitor no longer generates false stall alarms across step resets.
-  - policy guard remains intact (`mmsafe-waiter.service` keeps waiting while training is active).
-- Outstanding action (outside MMSAFE codebase):
-  - diagnose root restart trigger in LowResource watchdog/trainer flow to stop periodic `status=143` recycling.
+## Remaining Risk / Next Refinement
+- A100 waiter currently resumes into legacy checkpoint lineage, generating zero-sample completion runs.
+- If fresh A100 post-training evaluation is required, run with a clean output directory (no resume checkpoint reuse).
