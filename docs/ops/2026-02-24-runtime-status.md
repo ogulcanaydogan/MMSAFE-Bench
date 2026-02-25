@@ -15,8 +15,8 @@
   - `uv run python scripts/run_training.py --config configs/models/turkcell_7b_a100_v6_recovery_reset_opt.yaml --resume-from artifacts/training/turkcell-7b-sft-v6-a100-bf16-recovery-reset-opt/checkpoint-750`
 - Canonical telemetry file:
   - `/home/weezboo/projects/LowResource-LLM-Forge/artifacts/logs/training_monitor_status_a100.txt`
-- Snapshot (`2026-02-24T23:54:22Z`):
-  - `step=856/8601`
+- Snapshot (`2026-02-24T23:56:22Z`):
+  - `step=871/8601`
   - `percent=9`
   - `eta_utc=2026-02-25T12:04:45Z`
   - `gpu=100 %, 60486 MiB, 81920 MiB`
@@ -36,6 +36,7 @@
   - Adds stale-status warning path (`STATUS_STALE_SECONDS`, default `180s`) and suppresses false stall alerts while telemetry is stale.
 - Verification:
   - new heartbeat line includes `status_file=...training_monitor_status_a100.txt status_age=25s`.
+  - telemetry freshness check (`2026-02-24T23:55:20Z` → `2026-02-24T23:56:50Z`) shows monotonic progress (`step 856 -> 871`) from the canonical status file.
 
 ## A100 Policy Guard (MMSAFE Waiter)
 - `mmsafe-waiter.service`: `active (running)`
@@ -70,6 +71,8 @@
   - `a100`
   - `v100`
   - `spark` (`100.80.116.20`)
+- Telegram API acknowledgement:
+  - `sendMessage` returned `"ok": true` and `HTTP_CODE=200` on all three hosts (latest validation at `2026-02-25 02:13 UTC`).
 - `spark` standby check:
   - notifier script exists at `/home/weezboo/projects/MMSAFE-Bench/scripts/ops/notify_telegram.sh`.
 
