@@ -41,8 +41,14 @@ notify() {
   fi
 }
 
-latest_checkpoint_file() {
-  ls -1t "$OUTPUT_DIR"/checkpoints/checkpoint_eval-*.json 2>/dev/null | head -n1 || true
+checkpoint_has_results() {
+  local checkpoint_path="$1"
+  local base run_id results_path
+  base="$(basename "$checkpoint_path")"
+  run_id="${base#checkpoint_}"
+  run_id="${run_id%.json}"
+  results_path="$OUTPUT_DIR/${run_id}_results.json"
+  [[ -f "$results_path" ]]
 }
 
 checkpoint_completed_count() {
@@ -74,6 +80,11 @@ best_checkpoint_file() {
 
   shopt -s nullglob
   for file in "$OUTPUT_DIR"/checkpoints/checkpoint_eval-*.json; do
+    # Resume only unfinished runs. Completed runs already have results files.
+    if checkpoint_has_results "$file"; then
+      continue
+    fi
+
     count="$(checkpoint_completed_count "$file")"
     if [[ ! "$count" =~ ^[0-9]+$ ]]; then
       count=0

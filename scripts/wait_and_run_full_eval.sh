@@ -101,8 +101,14 @@ forge_training_active() {
   return 1
 }
 
-latest_checkpoint_file() {
-  ls -1t "$MMSAFE_OUTPUT_DIR"/checkpoints/checkpoint_eval-*.json 2>/dev/null | head -n1 || true
+checkpoint_has_results() {
+  local checkpoint_path="$1"
+  local base run_id results_path
+  base="$(basename "$checkpoint_path")"
+  run_id="${base#checkpoint_}"
+  run_id="${run_id%.json}"
+  results_path="$MMSAFE_OUTPUT_DIR/${run_id}_results.json"
+  [[ -f "$results_path" ]]
 }
 
 checkpoint_completed_count() {
@@ -134,6 +140,12 @@ best_checkpoint_file() {
 
   shopt -s nullglob
   for file in "$MMSAFE_OUTPUT_DIR"/checkpoints/checkpoint_eval-*.json; do
+    # Only resume from unfinished runs. If a matching results file exists,
+    # that checkpoint belongs to a completed run and should not be reused.
+    if checkpoint_has_results "$file"; then
+      continue
+    fi
+
     count="$(checkpoint_completed_count "$file")"
     if [[ ! "$count" =~ ^[0-9]+$ ]]; then
       count=0

@@ -1,4 +1,4 @@
-# Runtime Status - 2026-02-24 (Updated 2026-02-25 08:29 UTC)
+# Runtime Status - 2026-02-24 (Updated 2026-02-25 08:36 UTC)
 
 ## Scope
 - LowResource-LLM-Forge: A100 restart loop stabilization + completion lock
@@ -42,6 +42,11 @@
     - `eval-e4ae1842347f`
     - `eval-e9481b529787`
   - both have HTML + Markdown reports.
+- Waiter resume fix applied (`2026-02-25 08:33 UTC`):
+  - scripts updated: `scripts/wait_and_run_full_eval.sh`, `scripts/ops/run_full_eval_v100.sh`.
+  - new rule: only resume from checkpoints **without** matching `*_results.json` (unfinished runs).
+  - completed-run checkpoints are now skipped to prevent zero-sample replays.
+  - post-fix launch evidence: waiter resumed from `checkpoint_eval-b81a7d5fb9a9.json` (`completed=300`) and started active A100 eval.
 
 ## V100 Baseline (Reference)
 - canonical clean baseline remains:
@@ -66,5 +71,5 @@
 - V100 baseline integrity retained: **Done**
 
 ## Remaining Risk / Next Refinement
-- A100 waiter currently resumes into legacy checkpoint lineage, generating zero-sample completion runs.
-- If fresh A100 post-training evaluation is required, run with a clean output directory (no resume checkpoint reuse).
+- A100 waiter resume-to-completed issue is mitigated by checkpoint/result pairing filter.
+- Optional next refinement: move A100 post-training runs to a dedicated output directory per cycle for cleaner lineage separation.
