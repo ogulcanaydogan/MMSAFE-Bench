@@ -91,3 +91,12 @@
   - `refusal_rate`
   - `unavailable_providers`
   - host used (`a100` or `v100`)
+
+## Known Runtime Risk (A100)
+- Observed cadence on `2026-02-25`: `forge-training.service` exits with `status=143` and auto-restarts roughly every ~33 minutes.
+- Practical effect: step climbs from ~`750` to ~`970`, then resets to ~`750` after restart, delaying next checkpoint (`1000`) and final completion.
+- Current mitigation in place:
+  - monitor no longer generates false stall alarms across step resets.
+  - policy guard remains intact (`mmsafe-waiter.service` keeps waiting while training is active).
+- Outstanding action (outside MMSAFE codebase):
+  - diagnose root restart trigger in LowResource watchdog/trainer flow to stop periodic `status=143` recycling.
